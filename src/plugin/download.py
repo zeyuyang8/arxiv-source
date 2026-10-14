@@ -85,7 +85,9 @@ def download_source(given: DownloadInput, workspace: Path, *, opener=urllib.requ
     if not ARXIV_ID.fullmatch(paper):
         raise ValueError("invalid arXiv id")
     folder = resolve_destination(workspace, given.destination)
-    folder.mkdir(parents=True, exist_ok=False)
+    if folder.exists():
+        raise FileExistsError(f"destination already exists: {given.destination}")
+    folder.mkdir(parents=True)
     url = f"https://export.arxiv.org/e-print/{paper}"
     try:
         files = unpack_source(fetch(url, limit=MAX_DOWNLOAD, opener=opener), folder)

@@ -46,8 +46,10 @@ def test_rejects_invalid_id_and_existing_destination(tmp_path: Path) -> None:
         download_source(DownloadInput(arxiv_id="../../secret", destination="bad"), tmp_path)
     existing = tmp_path / "existing"
     existing.mkdir()
-    with pytest.raises(FileExistsError):
+    (existing / "kept.tex").write_text("mine")
+    with pytest.raises(FileExistsError, match="^destination already exists: existing$"):
         download_source(DownloadInput(arxiv_id="1706.03762", destination="existing"), tmp_path)
+    assert (existing / "kept.tex").read_text() == "mine"
 
     with pytest.raises(ValueError, match="workspace"):
         download_source(DownloadInput(arxiv_id="1706.03762", destination="../outside"), tmp_path)
