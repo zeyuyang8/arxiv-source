@@ -13,7 +13,7 @@ ATTENTION = SaveInput(query="ti:attention", max_results=2, destination="papers")
 
 def test_saves_every_result_in_its_own_folder(tmp_path: Path) -> None:
     arxiv = FakeArxiv("1706.03762v7", "hep-th/9901001v1")
-    result = save_search_results(ATTENTION, tmp_path, opener=arxiv, pause=0)
+    result = save_search_results(ATTENTION, tmp_path, opener=arxiv)
     assert result.folder == "papers"
     assert [paper.folder for paper in result.papers] == [
         "papers/1706.03762v7",
@@ -30,11 +30,11 @@ def test_refuses_an_existing_destination_before_searching(tmp_path: Path) -> Non
     (tmp_path / "papers").mkdir()
     arxiv = FakeArxiv("1706.03762v7")
     with pytest.raises(FileExistsError):
-        save_search_results(ATTENTION, tmp_path, opener=arxiv, pause=0)
+        save_search_results(ATTENTION, tmp_path, opener=arxiv)
     assert arxiv.urls == []
 
 
 def test_rejects_more_than_ten_papers(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="between 1 and 10"):
         given = SaveInput(query="ti:attention", max_results=11, destination="papers")
-        save_search_results(given, tmp_path, opener=FakeArxiv(), pause=0)
+        save_search_results(given, tmp_path, opener=FakeArxiv())

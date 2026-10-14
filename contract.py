@@ -64,6 +64,20 @@ class SavedPaperOutput(Output):
 
 
 @dataclass
+class FoundPaperOutput(Output):
+    # What the agent submits: the paper it picked, and where download_source saved it. Not the
+    # files: download_source's own check holds them, and a long list is no list to retype.
+    arxiv_id: Annotated[str, VERSIONED_ID]
+    title: Annotated[str, TITLE]
+    authors: Annotated[list[str], AUTHORS]
+    summary: Annotated[str, "The abstract, as arXiv lists it"]
+    published: Annotated[str, PUBLISHED]
+    abs_url: Annotated[str, ABS_URL]
+    source_url: Annotated[str, SOURCE_URL]
+    folder: Annotated[str, FOLDER]
+
+
+@dataclass
 class DailyPaper(Output):
     arxiv_id: Annotated[str, NEW_ID]
     title: Annotated[str, TITLE]
@@ -185,6 +199,6 @@ TASKS = {
     Task.SEARCH_PAPERS: (SearchInput, SearchOutput),
     Task.SAVE_PAPER_SOURCE: (DownloadInput, DownloadOutput),
     Task.SAVE_SEARCH_RESULTS: (SaveInput, SaveOutput),
-    Task.FIND_AND_SAVE_PAPER: (FindInput, SavedPaperOutput),
+    Task.FIND_AND_SAVE_PAPER: (FindInput, FoundPaperOutput),
     Task.WRITE_DAILY_DIGEST: (DailyInput, DigestOutput),
 }

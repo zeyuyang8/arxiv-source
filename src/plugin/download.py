@@ -3,29 +3,18 @@ from __future__ import annotations
 import gzip
 import io
 import re
+import shutil
 import tarfile
 import urllib.request
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO
 
 from contract import DownloadInput, DownloadOutput
+from plugin.arxiv import fetch
 
 ARXIV_ID = re.compile(r"^(?:\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?/\d{7})(?:v\d+)?$", re.IGNORECASE)
 MAX_DOWNLOAD = 100 * 1024 * 1024
 MAX_EXTRACTED = 500 * 1024 * 1024
 MAX_FILES = 10_000
-HEADERS = {"User-Agent": "nanoagent-arxiv-source/0.1"}
-
-
-def read_limited(stream: BinaryIO, limit: int = MAX_DOWNLOAD) -> bytes:
-    chunks: list[bytes] = []
-    size = 0
-    while chunk := stream.read(1024 * 1024):
-        size += len(chunk)
-        if size > limit:
-            raise ValueError("arXiv response exceeds the download limit")
-        chunks.append(chunk)
-    return b"".join(chunks)
 
 
 def resolve_destination(workspace: Path, destination: str) -> Path:
@@ -99,11 +88,9 @@ def download_source(given: DownloadInput, workspace: Path, *, opener=urllib.requ
     folder.mkdir(parents=True, exist_ok=False)
     url = f"https://export.arxiv.org/e-print/{paper}"
     try:
-        with opener(urllib.request.Request(url, headers=HEADERS)) as response:
-            data = read_limited(response)
-        files = unpack_source(data, folder)
+        files = unpack_source(fetch(url, limit=MAX_DOWNLOAD, opener=opener), folder)
     except Exception:
-        if folder.exists() and not any(folder.iterdir()):
-            folder.rmdir()
+        # The folder is this call's own (it was new), so a failure leaves nothing half unpacked.
+        shutil.rmtree(folder, ignore_errors=True)
         raise
     return DownloadOutput(arxiv_id=paper, source_url=url, folder=workspace_path(workspace, folder), files=files)

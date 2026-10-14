@@ -31,8 +31,10 @@ turns a request into one of its tasks. `search-papers`, `save-paper-source`
 and `save-search-results` each run one tool, and their output is that tool's.
 `find-and-save-paper` takes the paper as the person describes it and gives an
 agent `search_papers` and `download_source`, so it can pick the right result
-itself; it submits the paper with its saved folder and files, and
-`verifier/find.py` checks those are the source in the requested destination.
+itself; it submits the paper with its saved folder (not the files, which
+`download_source`'s own check already held to the archive), and
+`verifier/find.py` checks that the paper is the one whose source fills the
+requested destination.
 
 ### Daily digest
 

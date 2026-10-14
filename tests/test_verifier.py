@@ -9,7 +9,7 @@ from slimconfig import build_output, plain_output
 import plugin.naming
 import verifier
 import verifier.naming
-from contract import TASKS, TOOLS, DailyOutput, DownloadInput, SavedPaperOutput, SearchInput, Task, Tool
+from contract import TASKS, TOOLS, DailyOutput, DownloadInput, FoundPaperOutput, SearchInput, Task, Tool
 from plugin import download_source, search_papers
 
 DATE = "2026-09-09"
@@ -113,9 +113,7 @@ def found_and_saved(workspace: Path) -> dict:
         DownloadInput(arxiv_id="1706.03762v7", destination="attention"), workspace, opener=FakeArxiv()
     )
     return plain_output(
-        SavedPaperOutput(
-            **plain_output(found.papers[0]), source_url=saved.source_url, folder=saved.folder, files=saved.files
-        )
+        FoundPaperOutput(**plain_output(found.papers[0]), source_url=saved.source_url, folder=saved.folder)
     )
 
 
@@ -128,7 +126,7 @@ def test_approves_the_found_paper_saved_in_the_destination(tmp_path: Path) -> No
 @pytest.mark.parametrize(
     ("changes", "message"),
     [
-        ({"files": ["main.tex", "extra.tex"]}, "declared files differ"),
+        ({"folder": "elsewhere"}, "requested destination"),
         ({"source_url": "https://export.arxiv.org/e-print/1706.99999"}, "e-print"),
         ({"abs_url": "http://arxiv.org/abs/1706.99999v1"}, "abs_url"),
         ({"arxiv_id": "not an id"}, "not an arXiv id"),

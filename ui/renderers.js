@@ -108,7 +108,16 @@ export default {
       note("folder", `Saved ${plural(papers.length, "paper")} in ${folder}`),
       capped(papers, savedPaper),
     ),
-  SavedPaperOutput: (saved) => h("ol", { class: "paper-list" }, savedPaper(saved)),
+  FoundPaperOutput: (found) =>
+    h(
+      "ol",
+      { class: "paper-list" },
+      paper(
+        { ...found, url: found.abs_url },
+        abstract(found.summary),
+        h("p", { class: "paper-meta muted" }, icon("folder", { size: 14 }), h("code", { text: found.folder })),
+      ),
+    ),
   DownloadOutput: ({ arxiv_id, folder, files }) =>
     h("div", { class: "papers" }, note("check", `Saved the source of ${arxiv_id}`), savedFolder(folder, files)),
   DigestOutput: ({ date, entries }) =>

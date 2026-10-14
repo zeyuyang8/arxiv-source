@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 import urllib.request
 from dataclasses import asdict
 from pathlib import Path
@@ -10,8 +9,6 @@ from plugin.download import download_source, resolve_destination, workspace_path
 from plugin.search import search_papers
 
 MAX_SAVED = 10
-# arXiv asks API clients to wait 3 seconds between requests.
-PAUSE = 3.0
 
 
 def paper_folder(arxiv_id: str) -> str:
@@ -19,9 +16,7 @@ def paper_folder(arxiv_id: str) -> str:
     return arxiv_id.replace("/", "_")
 
 
-def save_search_results(
-    given: SaveInput, workspace: Path, *, opener=urllib.request.urlopen, pause: float = PAUSE
-) -> SaveOutput:
+def save_search_results(given: SaveInput, workspace: Path, *, opener=urllib.request.urlopen) -> SaveOutput:
     """Search arXiv, then download and unpack every result's source into `destination/<arxiv id>/`."""
     if not 1 <= given.max_results <= MAX_SAVED:
         raise ValueError(f"max_results must be between 1 and {MAX_SAVED}")
@@ -32,7 +27,6 @@ def save_search_results(
     folder.mkdir(parents=True)
     papers = []
     for paper in found.papers:
-        time.sleep(pause)
         destination = str(Path(given.destination) / paper_folder(paper.arxiv_id))
         given_paper = DownloadInput(arxiv_id=paper.arxiv_id, destination=destination)
         saved = download_source(given_paper, workspace, opener=opener)

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-import time
 import urllib.request
 from datetime import date as Date
 from pathlib import Path
@@ -22,8 +21,6 @@ from plugin.download import download_source
 from plugin.naming import raw_folder_name
 from plugin.search import MAX_RESULTS, fetch_paper, search_papers
 
-# arXiv asks API clients to wait 3 seconds between requests.
-PAUSE = 3.0
 NEW_ID = re.compile(r"^\d{4}\.\d{5}$")
 VERSION = re.compile(r"v\d+$")
 
@@ -42,18 +39,14 @@ def base_id(arxiv_id: str) -> str:
     return paper
 
 
-def list_daily_papers(
-    given: DailyInput, workspace: Path, *, opener=urllib.request.urlopen, pause: float = PAUSE
-) -> DailyOutput:
+def list_daily_papers(given: DailyInput, workspace: Path, *, opener=urllib.request.urlopen) -> DailyOutput:
     """For each person, the papers arXiv lists with them as an author, first submitted on the date."""
     people = given.people
     if not people or len(set(people)) != len(people) or any('"' in person or not person.strip() for person in people):
         raise ValueError("people must be distinct, non-empty names without quotes")
     clause = submitted_on(given.date)
     listing = []
-    for index, person in enumerate(people):
-        if index:
-            time.sleep(pause)
+    for person in people:
         query = SearchInput(query=f'au:"{person.strip()}" AND {clause}', max_results=MAX_RESULTS)
         found = search_papers(query, workspace, opener=opener)
         if len(found.papers) == MAX_RESULTS:
@@ -74,15 +67,12 @@ def list_daily_papers(
     return DailyOutput(date=given.date, people=listing)
 
 
-def save_raw_paper(
-    given: RawInput, workspace: Path, *, opener=urllib.request.urlopen, pause: float = PAUSE
-) -> RawOutput:
+def save_raw_paper(given: RawInput, workspace: Path, *, opener=urllib.request.urlopen) -> RawOutput:
     """Save a paper's source under `docs/raw/{first_author_name}-{paper_short_name}-{arxiv_id}-{date}`."""
     paper_id = base_id(given.arxiv_id)
     Date.fromisoformat(given.date)
     record = fetch_paper(paper_id, opener=opener)
     folder = f"docs/raw/{raw_folder_name(record.title, record.authors, paper_id, given.date)}"
-    time.sleep(pause)
     saved = download_source(DownloadInput(arxiv_id=paper_id, destination=folder), workspace, opener=opener)
     return RawOutput(
         arxiv_id=paper_id, title=record.title, authors=record.authors, folder=saved.folder, files=saved.files

@@ -6,7 +6,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from contract import Paper, SearchInput, SearchOutput
-from plugin.download import HEADERS, read_limited
+from plugin.arxiv import fetch
 
 API = "https://export.arxiv.org/api/query"
 ATOM = "{http://www.w3.org/2005/Atom}"
@@ -34,8 +34,7 @@ def _paper(entry: ElementTree.Element) -> Paper:
 def query_api(params: dict, *, opener=urllib.request.urlopen) -> tuple[str, list[Paper]]:
     """Ask the arXiv API; return the request URL and the papers it lists, best match first."""
     url = f"{API}?{urllib.parse.urlencode(params)}"
-    with opener(urllib.request.Request(url, headers=HEADERS)) as response:
-        feed = ElementTree.fromstring(read_limited(response, MAX_FEED))
+    feed = ElementTree.fromstring(fetch(url, limit=MAX_FEED, opener=opener))
     entries = feed.findall(f"{ATOM}entry")
     # A rejected query comes back as a single entry whose id is arXiv's error page.
     if len(entries) == 1 and "/api/errors" in _text(entries[0], "id"):
