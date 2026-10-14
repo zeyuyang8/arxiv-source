@@ -38,6 +38,11 @@ def resolve_destination(workspace: Path, destination: str) -> Path:
     return folder
 
 
+def workspace_path(workspace: Path, folder: Path) -> str:
+    """``folder`` as the plugin's results name it: relative to the workspace, which is the run's own."""
+    return folder.relative_to(workspace.resolve()).as_posix()
+
+
 def _safe_name(name: str) -> Path:
     path = PurePosixPath(name)
     if path.is_absolute() or ".." in path.parts or not path.parts:
@@ -101,4 +106,4 @@ def download_source(given: DownloadInput, workspace: Path, *, opener=urllib.requ
         if folder.exists() and not any(folder.iterdir()):
             folder.rmdir()
         raise
-    return DownloadOutput(arxiv_id=paper, source_url=url, folder=str(folder), files=files)
+    return DownloadOutput(arxiv_id=paper, source_url=url, folder=workspace_path(workspace, folder), files=files)

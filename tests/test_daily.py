@@ -30,7 +30,7 @@ def test_rejects_bad_people(tmp_path: Path, people: list[str]) -> None:
 def test_saves_a_paper_under_its_raw_folder_name(tmp_path: Path) -> None:
     saved = save_raw_paper(RawInput(arxiv_id="2609.10630v1", date="2026-09-09"), tmp_path, opener=FakeArxiv(), pause=0)
     name = "vaswani-paper-2609-10630-wrapped-2609.10630-2026-09-09"
-    assert saved.folder == str(tmp_path / "docs" / "raw" / name)
+    assert saved.folder == f"docs/raw/{name}"
     assert (tmp_path / "docs" / "raw" / name / "main.tex").read_text() == "2609.10630"
 
 

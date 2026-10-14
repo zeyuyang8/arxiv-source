@@ -6,7 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from contract import DownloadInput, SavedPaperOutput, SaveInput, SaveOutput, SearchInput
-from plugin.download import download_source, resolve_destination
+from plugin.download import download_source, resolve_destination, workspace_path
 from plugin.search import search_papers
 
 MAX_SAVED = 10
@@ -39,4 +39,4 @@ def save_search_results(
         papers.append(
             SavedPaperOutput(**asdict(paper), source_url=saved.source_url, folder=saved.folder, files=saved.files)
         )
-    return SaveOutput(query=found.query, folder=str(folder), papers=papers)
+    return SaveOutput(query=found.query, folder=workspace_path(workspace, folder), papers=papers)

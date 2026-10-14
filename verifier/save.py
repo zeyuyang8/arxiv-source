@@ -14,7 +14,7 @@ def verify_input(value):
 
 def verify_output(input_value, output_value, workspace):
     folder = Path(workspace) / input_value.destination
-    if Path(output_value.folder) != folder or not folder.is_dir():
+    if Path(output_value.folder) != Path(input_value.destination) or not folder.is_dir():
         return result(False, "output folder is missing or is not the requested destination in the workspace")
     papers = output_value.papers
     problem = papers_problem(papers, input_value)
@@ -26,7 +26,7 @@ def verify_output(input_value, output_value, workspace):
     if present != sorted(expected):
         return result(False, "destination holds other folders than one per saved paper", present=present)
     for name, paper in expected.items():
-        if Path(paper.folder) != folder / name:
+        if Path(paper.folder) != Path(input_value.destination) / name:
             return result(False, f"paper {paper.arxiv_id} is not saved in {name}/")
         problem = files_problem(folder / name, paper.files)
         if problem:

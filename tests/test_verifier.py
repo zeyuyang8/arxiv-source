@@ -49,7 +49,7 @@ def entry(workspace: Path, **changes):
         "authors": PAPER["authors"],
         "summary": "Argues safety work must start now.\nCalls for binding commitments.",
         "link": "https://arxiv.org/abs/2609.10630",
-        "folder": str(workspace / "docs" / "raw" / RAW),
+        "folder": f"docs/raw/{RAW}",
     }
     return value | changes
 

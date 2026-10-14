@@ -54,7 +54,7 @@ def _entry_problems(entry, record, folder):
     link = f"https://arxiv.org/abs/{record.arxiv_id}"
     if entry.link != link:
         problems.append(f"link is not {link}")
-    if Path(entry.folder) != folder:
+    if Path(entry.folder) != Path("docs") / "raw" / folder.name:
         problems.append(f"folder is not docs/raw/{folder.name}")
     return problems
 

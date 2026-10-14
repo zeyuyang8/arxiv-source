@@ -36,7 +36,7 @@ AUTHORS = "The authors' names, as arXiv lists them, in order"
 PUBLISHED = "When the first version was submitted, an ISO 8601 UTC timestamp"
 ABS_URL = "The paper's arXiv abstract page"
 SOURCE_URL = "The arXiv e-print URL the source archive came from"
-FOLDER = "The folder the source was unpacked in, inside the plugin workspace"
+FOLDER = "The folder the source was unpacked in, relative to the plugin workspace"
 FILES = "The unpacked files, relative to the folder"
 
 
@@ -127,7 +127,7 @@ class SaveInput(Output):
 @dataclass
 class SaveOutput(Output):
     query: Annotated[str, "The search_query, as given"]
-    folder: Annotated[str, "The destination folder, inside the plugin workspace"]
+    folder: Annotated[str, "The destination folder, relative to the plugin workspace"]
     papers: Annotated[list[SavedPaperOutput], "Each saved paper, best match first, its source in <folder>/<arxiv id>"]
 
 

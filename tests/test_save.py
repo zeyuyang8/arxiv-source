@@ -14,10 +14,10 @@ ATTENTION = SaveInput(query="ti:attention", max_results=2, destination="papers")
 def test_saves_every_result_in_its_own_folder(tmp_path: Path) -> None:
     arxiv = FakeArxiv("1706.03762v7", "hep-th/9901001v1")
     result = save_search_results(ATTENTION, tmp_path, opener=arxiv, pause=0)
-    assert result.folder == str(tmp_path / "papers")
+    assert result.folder == "papers"
     assert [paper.folder for paper in result.papers] == [
-        str(tmp_path / "papers" / "1706.03762v7"),
-        str(tmp_path / "papers" / "hep-th_9901001v1"),
+        "papers/1706.03762v7",
+        "papers/hep-th_9901001v1",
     ]
     assert (tmp_path / "papers" / "hep-th_9901001v1" / "main.tex").read_text() == "hep-th/9901001v1"
     assert arxiv.urls[1:] == [

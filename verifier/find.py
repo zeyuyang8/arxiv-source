@@ -18,7 +18,7 @@ def verify_task(arguments, output, reference, workspace):
     if output.source_url != f"https://export.arxiv.org/e-print/{paper}":
         return result(False, f"source_url is not paper {paper}'s e-print")
     folder = Path(workspace) / arguments.destination
-    if Path(output.folder) != folder or not folder.is_dir():
+    if Path(output.folder) != Path(arguments.destination) or not folder.is_dir():
         return result(False, "the source is not saved in the requested destination in the workspace")
     problem = files_problem(folder, output.files)
     if problem:

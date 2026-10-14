@@ -21,8 +21,9 @@ def verify_output(input_value, output_value, workspace):
     if output_value.arxiv_id != paper or not output_value.authors:
         return result(False, "output is for another paper, or has no authors")
     name = raw_folder_name(output_value.title, output_value.authors, paper, input_value.date)
-    folder = Path(workspace) / "docs" / "raw" / name
-    if Path(output_value.folder) != folder or not folder.is_dir():
+    relative = Path("docs") / "raw" / name
+    folder = Path(workspace) / relative
+    if Path(output_value.folder) != relative or not folder.is_dir():
         return result(False, f"source is not saved in docs/raw/{name}")
     problem = files_problem(folder, output_value.files)
     if problem:

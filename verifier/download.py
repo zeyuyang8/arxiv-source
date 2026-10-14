@@ -13,9 +13,8 @@ def verify_input(value):
 
 
 def verify_output(input_value, output_value, workspace):
-    expected = Path(workspace) / input_value.destination
-    folder = Path(output_value.folder)
-    if folder != expected or not folder.is_dir():
+    folder = Path(workspace) / input_value.destination
+    if Path(output_value.folder) != Path(input_value.destination) or not folder.is_dir():
         return result(False, "output folder is missing or is not the requested destination in the workspace")
     problem = files_problem(folder, output_value.files)
     if problem:
