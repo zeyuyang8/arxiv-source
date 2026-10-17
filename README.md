@@ -70,7 +70,6 @@ It has the standard plugin layout, which NanoAgent requires:
 ├── uv.lock
 ├── .gitignore
 ├── .env             # needed environment variable names (none here)
-├── run.sh           # checks this environment can run the plugin
 ├── src/plugin/      # the MCP server (__main__.py, its IMPLEMENTATIONS table) and the tools
 ├── tests/
 ├── ui/              # how the page draws the outputs: renderers.js (papers as cards) and renderers.css
