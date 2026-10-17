@@ -1,7 +1,7 @@
 _ > nanoagent.plugin.manifest.ManifestConfig:
 id: arxiv-source
 name: arXiv Search and Source Downloader
-version: 0.5.0
+version: 0.5.1
 status: ready
 nanoagent: ~=0.5.0
 
