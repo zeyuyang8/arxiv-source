@@ -1,4 +1,4 @@
-_ > nanoagent.plugin.manifest.ProductConfig:
+_ > nanoagent.plugin.v1.ProductConfig:
 tagline: "Find arXiv papers and keep their sources"
 summary: "Search arXiv by topic, author or date and save the LaTeX source of every paper you want into your workspace. It can also watch a list of people and write a short daily digest of their new papers."
 highlights:
