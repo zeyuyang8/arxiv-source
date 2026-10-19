@@ -10,7 +10,7 @@ from fakes import Response
 from plugin import arxiv
 
 
-def busy(code: int = 429, retry_after: str | None = None) -> urllib.error.HTTPError:
+def busy(code: int = 503, retry_after: str | None = None) -> urllib.error.HTTPError:
     headers = {"Retry-After": retry_after} if retry_after else {}
     return urllib.error.HTTPError("https://export.arxiv.org/e-print/1", code, "busy", headers, io.BytesIO())
 
@@ -56,10 +56,17 @@ def test_waits_the_pause_between_requests(monkeypatch: pytest.MonkeyPatch, waits
 
 
 def test_asks_again_while_arxiv_is_busy(waits: list[float]) -> None:
-    opener = Flaky(busy(429, retry_after="7"), busy(503))
+    opener = Flaky(busy(503, retry_after="7"), busy(503))
     assert arxiv.fetch("https://export.arxiv.org/a", limit=10, opener=opener) == b"ok"
     assert opener.calls == 3
     assert 7.0 in waits
+
+
+def test_fails_at_once_when_arxiv_limits_this_computer(waits: list[float]) -> None:
+    opener = Flaky(busy(429, retry_after="7"))
+    with pytest.raises(arxiv.RateLimited, match="HTTP 429"):
+        arxiv.fetch("https://export.arxiv.org/a", limit=10, opener=opener)
+    assert opener.calls == 1 and 7.0 not in waits
 
 
 def test_asks_again_for_an_answer_cut_short(waits: list[float]) -> None:

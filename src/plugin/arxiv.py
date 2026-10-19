@@ -1,7 +1,9 @@
 """Every request this plugin makes of arXiv, made the way arXiv asks of API clients: one at a time,
-at least PAUSE seconds after the last, and, when arXiv answers that it is busy (429 or 503) or its
-answer is cut short, again after a wait, up to ATTEMPTS times in all. A run keeps one plugin
-process, so the pause holds across every tool call of the run."""
+at least PAUSE seconds after the last, and, when arXiv answers that it is busy (503) or its answer
+is cut short, again after a wait, up to ATTEMPTS times in all. A run keeps one plugin process, so
+the pause holds across every tool call of the run. When arXiv answers that it is limiting this
+computer's requests (429), the request fails at once (:class:`RateLimited`): asking again only
+keeps the limit on."""
 
 from __future__ import annotations
 
@@ -15,13 +17,18 @@ import zlib
 HEADERS = {"User-Agent": "nanoagent-arxiv-source/0.1"}
 PAUSE = 3.0
 ATTEMPTS = 4
-BUSY = {429, 503}
+BUSY = {503}
+LIMITED = 429
 
 _last = 0.0  # time.monotonic() of the last request
 
 
 class CutShort(Exception):
     """arXiv's answer ended before all of it arrived."""
+
+
+class RateLimited(RuntimeError):
+    """arXiv is limiting this computer's requests (HTTP 429)."""
 
 
 def _read(response, limit: int) -> bytes:
@@ -52,8 +59,9 @@ def _wait_after(error: Exception, attempt: int) -> float:
 
 
 def fetch(url: str, *, limit: int, opener=urllib.request.urlopen) -> bytes:
-    """The whole body of a GET of ``url``, at most ``limit`` bytes; raises arXiv's last error once it
-    stops being busy, or after ATTEMPTS tries."""
+    """The whole body of a GET of ``url``, at most ``limit`` bytes; raises :class:`RateLimited` at
+    once when arXiv limits this computer, and arXiv's last error once it stops being busy, or
+    after ATTEMPTS tries."""
     global _last
     for attempt in range(ATTEMPTS):
         wait = _last + PAUSE - time.monotonic()
@@ -64,6 +72,10 @@ def fetch(url: str, *, limit: int, opener=urllib.request.urlopen) -> bytes:
             with opener(urllib.request.Request(url, headers=HEADERS)) as response:
                 return _read(response, limit)
         except (urllib.error.HTTPError, CutShort, http.client.IncompleteRead, ConnectionError) as error:
+            if isinstance(error, urllib.error.HTTPError) and error.code == LIMITED:
+                raise RateLimited(
+                    "arXiv is limiting requests from this computer (HTTP 429); wait a while before asking it again"
+                ) from error
             retry = not isinstance(error, urllib.error.HTTPError) or error.code in BUSY
             if not retry or attempt == ATTEMPTS - 1:
                 raise
