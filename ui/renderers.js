@@ -1,6 +1,6 @@
 // How this plugin's page draws its tasks' outputs: papers as cards (title, authors, date, abstract
-// and links), each search result with a button to save its source, saved sources as their folder
-// and files, and the daily digest as its papers with their two-line summaries.
+// and links), each search result with a button to save its source, and saved sources as their
+// folder and files.
 import { disclosure, h, icon, plural } from "./kit/components.js";
 
 const DAY = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -83,30 +83,13 @@ function searchedPaper(found, send) {
   );
 }
 
-const savedPaper = (saved) =>
-  paper({ ...saved, url: saved.abs_url }, abstract(saved.summary), savedFolder(saved.folder, saved.files));
-
-const digestEntry = (entry) =>
-  paper(
-    { ...entry, url: entry.link },
-    h("p", { class: "paper-summary", text: entry.summary }),
-    h("p", { class: "paper-meta muted" }, icon("folder", { size: 14 }), h("code", { text: entry.folder })),
-  );
-
 export default {
-  SearchOutput: ({ query, papers }, { send }) =>
+  SearchOutput: ({ query, engine, papers }, { send }) =>
     h(
       "div",
       { class: "papers" },
-      note("search", `${count(papers)} for ${query}`),
+      note("search", `${count(papers)} for ${query}, from ${engine}`),
       papers.length ? capped(papers, (found) => searchedPaper(found, send)) : null,
-    ),
-  SaveOutput: ({ folder, papers }) =>
-    h(
-      "div",
-      { class: "papers" },
-      note("folder", `Saved ${plural(papers.length, "paper")} in ${folder}`),
-      capped(papers, savedPaper),
     ),
   FoundPaperOutput: (found) =>
     h(
@@ -118,13 +101,11 @@ export default {
         h("p", { class: "paper-meta muted" }, icon("folder", { size: 14 }), h("code", { text: found.folder })),
       ),
     ),
-  DownloadOutput: ({ arxiv_id, folder, files }) =>
-    h("div", { class: "papers" }, note("check", `Saved the source of ${arxiv_id}`), savedFolder(folder, files)),
-  DigestOutput: ({ date, entries }) =>
+  DownloadOutput: ({ arxiv_id, folder, files, reused }) =>
     h(
       "div",
       { class: "papers" },
-      note("calendar", `${count(entries)} on ${DAY.format(new Date(`${date}T12:00:00Z`))}`),
-      entries.length ? capped(entries, digestEntry) : null,
+      note("check", reused ? `The source of ${arxiv_id} was saved already` : `Saved the source of ${arxiv_id}`),
+      savedFolder(folder, files),
     ),
 };

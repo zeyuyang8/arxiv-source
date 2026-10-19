@@ -1,7 +1,7 @@
 _ > nanoagent.plugin.v0001.ManifestConfig:
 id: arxiv-source
 name: arXiv Search and Source Downloader
-version: 0.7.1
+version: 0.8.0
 status: ready
 spec: nanoagent.plugin/v0001
 
@@ -11,22 +11,16 @@ runtime > nanoagent.plugin.v0001.RuntimeConfig:
 
 permissions > nanoagent.plugin.v0001.PermissionsConfig:
   network > nanoagent.plugin.v0001.NetworkConfig:
-    hosts: [export.arxiv.org]
+    hosts: [api.openalex.org, export.arxiv.org, api.datacite.org]
   filesystem > nanoagent.plugin.v0001.FilesystemConfig:
     write: [workspace]
 
 # One entry per contract.Tool; its input and output classes are contract.TOOLS's.
 tools > dict[contract.Tool, nanoagent.plugin.v0001.ToolConfig]:
   search_papers:
-    description: Search arXiv and return the matching papers' metadata
+    description: Find papers on arXiv and their arXiv ids by an arXiv id or URL or in plain words, from OpenAlex, else arXiv, else DataCite
   download_source:
-    description: Download and safely unpack an arXiv paper source archive
-  save_search_results:
-    description: Search arXiv, then download and unpack every result's source archive
-  list_daily_papers:
-    description: List the papers arXiv shows for each person, first submitted on a date
-  save_raw_paper:
-    description: Save a paper's source under docs/raw/{first_author_name}-{paper_short_name}-{arxiv_id}-{date}
+    description: Save an arXiv paper's source in a folder named by its id, downloading it unless it is there already
 
 # One entry per contract.Task; its input and output classes are contract.TASKS's.
 tasks > dict[contract.Task, nanoagent.plugin.v0001.TaskConfig]:
@@ -35,36 +29,20 @@ tasks > dict[contract.Task, nanoagent.plugin.v0001.TaskConfig]:
     runner: tool
     tools: [search_papers]
     reference: null
-    instructions: Search arXiv with the query (a topic, title, author or category) and return the matching papers, best match first.
+    instructions: Find the papers on arXiv the query names (an arXiv id or URL, or a title, topic or authors in plain words) and return them, best match first.
   save-paper-source:
     description: Save a paper's LaTeX source by its arXiv ID
     runner: tool
     tools: [download_source]
     reference: null
-    instructions: Validate the arXiv ID, download its source, unpack it safely into the new destination folder, and return the saved files.
-  save-search-results:
-    description: Save the LaTeX source of a search's best matches
-    runner: tool
-    tools: [save_search_results]
-    reference: null
-    instructions: Search arXiv with the query, then download and unpack each result's source into its own folder.
+    instructions: Validate the arXiv ID and return its source in <destination>/<arxiv id>, downloading and unpacking it safely unless it is there already.
   find-and-save-paper:
     description: Find a described paper and save its LaTeX source
     runner: agent
     tools: [search_papers, download_source]
     reference: null
     instructions: |-
-      The request describes the paper in the person's words: its title, topic, authors or year. Turn it into arXiv searches with search_papers and pick the one result that matches the request.
-      Download its source into the destination with download_source, passing the arxiv_id as search_papers returned it.
+      The request names the paper in the person's words: its arXiv id or URL, title, topic, authors or year. Find it with search_papers, passing an arXiv id or URL as it is, else its title or its topic and authors in plain words, and pick the one result that matches the request.
+      Save its source with download_source, passing the arxiv_id as search_papers returned it and the destination; it goes in <destination>/<arxiv id>.
       Submit that paper: its search_papers fields, and source_url and folder exactly as download_source returned them.
-      If a tool fails because arXiv is limiting requests (HTTP 429), call no tool again and end without submitting: asking again only keeps the limit on.
-  write-daily-digest:
-    description: Write a digest of people's new papers on a date
-    runner: agent
-    tools: [search_papers, save_raw_paper]
-    reference: list_daily_papers
-    instructions: |-
-      For each person, call search_papers with the query au:"<full name>" AND submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359] for the date (max_results 50); these are the papers first submitted that day. A paper by several monitored people is one paper.
-      Save every paper with save_raw_paper, passing its id without the version (YYMM.NNNNN) and the date.
-      Then submit the digest for the date with one entry per paper: arxiv_id without the version, title and authors exactly as search_papers returned them, a summary of exactly two lines of your own words (separated by one newline), link https://arxiv.org/abs/<arxiv_id>, and folder exactly as save_raw_paper returned it.
-      If a tool fails because arXiv is limiting requests (HTTP 429), call no tool again and end without submitting: asking again only keeps the limit on.
+      If download_source fails because arXiv is limiting requests (HTTP 429), call no tool again and end without submitting: asking again only keeps the limit on.

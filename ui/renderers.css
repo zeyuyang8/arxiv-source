@@ -22,7 +22,6 @@
 .paper-authors { font-size: 13px; overflow-wrap: anywhere; }
 .paper-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 12.5px; }
 .paper-meta code { font-size: 12px; color: var(--muted); }
-.paper-summary { font-size: 13px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
 .paper-abstract p { font-size: 13px; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
 .paper-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 4px; font-size: 13px; }
 .paper-actions a { color: var(--accent); }

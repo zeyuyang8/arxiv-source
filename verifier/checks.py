@@ -46,6 +46,11 @@ def papers_problem(papers, input_value):
     return None
 
 
+def paper_folder(destination, arxiv_id):
+    """Where a paper's source is saved: `<destination>/<arxiv id>`, a legacy id's `/` as `_`."""
+    return Path(destination) / arxiv_id.replace("/", "_")
+
+
 def files_problem(folder, declared):
     """Details of how the files under ``folder`` differ from ``declared``, or None when they match."""
     if not declared:

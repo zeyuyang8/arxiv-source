@@ -80,19 +80,40 @@ def unpack_source(data: bytes, destination: Path) -> list[str]:
         return ["main.tex"]
 
 
-def download_source(given: DownloadInput, workspace: Path, *, opener=urllib.request.urlopen) -> DownloadOutput:
-    paper = given.arxiv_id.strip()
-    if not ARXIV_ID.fullmatch(paper):
-        raise ValueError("invalid arXiv id")
-    folder = resolve_destination(workspace, given.destination)
-    if folder.exists():
-        raise FileExistsError(f"destination already exists: {given.destination}")
-    folder.mkdir(parents=True)
-    url = f"https://export.arxiv.org/e-print/{paper}"
+def paper_folder(arxiv_id: str) -> str:
+    """The folder name for one paper, its id: legacy IDs (`hep-th/9901001`) contain a slash."""
+    return arxiv_id.replace("/", "_")
+
+
+def save_source(paper: str, folder: Path, workspace: Path, *, opener=urllib.request.urlopen) -> DownloadOutput:
+    """Paper ``paper``'s source in ``folder``: what is there already, else downloaded and unpacked."""
+    url = f"https://export.arxiv.org/src/{paper}"
+    saved = (
+        sorted(path.relative_to(folder).as_posix() for path in folder.rglob("*") if path.is_file())
+        if folder.is_dir()
+        else []
+    )
+    if saved:
+        return DownloadOutput(
+            arxiv_id=paper, source_url=url, folder=workspace_path(workspace, folder), files=saved, reused=True
+        )
+    folder.mkdir(parents=True, exist_ok=True)
     try:
         files = unpack_source(fetch(url, limit=MAX_DOWNLOAD, opener=opener), folder)
     except Exception:
-        # The folder is this call's own (it was new), so a failure leaves nothing half unpacked.
+        # The folder held nothing, so a failure leaves nothing half unpacked.
         shutil.rmtree(folder, ignore_errors=True)
         raise
-    return DownloadOutput(arxiv_id=paper, source_url=url, folder=workspace_path(workspace, folder), files=files)
+    return DownloadOutput(
+        arxiv_id=paper, source_url=url, folder=workspace_path(workspace, folder), files=files, reused=False
+    )
+
+
+def download_source(given: DownloadInput, workspace: Path, *, opener=urllib.request.urlopen) -> DownloadOutput:
+    """The paper's source in `<destination>/<arxiv id>/`: one saved there before, else downloaded."""
+    paper = given.arxiv_id.strip()
+    if not ARXIV_ID.fullmatch(paper):
+        raise ValueError("invalid arXiv id")
+    resolve_destination(workspace, given.destination)
+    folder = resolve_destination(workspace, str(Path(given.destination) / paper_folder(paper)))
+    return save_source(paper, folder, workspace, opener=opener)

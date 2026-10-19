@@ -17,6 +17,7 @@ import zlib
 HEADERS = {"User-Agent": "nanoagent-arxiv-source/0.1"}
 PAUSE = 3.0
 ATTEMPTS = 4
+TIMEOUT = 60  # seconds a request may go without an answer
 BUSY = {503}
 LIMITED = 429
 
@@ -58,18 +59,20 @@ def _wait_after(error: Exception, attempt: int) -> float:
     return float(named) if named.isdigit() else PAUSE * 2 ** (attempt + 1)
 
 
-def fetch(url: str, *, limit: int, opener=urllib.request.urlopen) -> bytes:
-    """The whole body of a GET of ``url``, at most ``limit`` bytes; raises :class:`RateLimited` at
-    once when arXiv limits this computer, and arXiv's last error once it stops being busy, or
-    after ATTEMPTS tries."""
+def fetch(
+    url: str, *, limit: int, opener=urllib.request.urlopen, attempts: int = ATTEMPTS, timeout: float = TIMEOUT
+) -> bytes:
+    """The whole body of a GET of ``url``, at most ``limit`` bytes, each try given ``timeout``
+    seconds to answer; raises :class:`RateLimited` at once when arXiv limits this computer, and
+    arXiv's last error once it stops being busy, or after ``attempts`` tries."""
     global _last
-    for attempt in range(ATTEMPTS):
+    for attempt in range(attempts):
         wait = _last + PAUSE - time.monotonic()
         if wait > 0:
             time.sleep(wait)
         _last = time.monotonic()
         try:
-            with opener(urllib.request.Request(url, headers=HEADERS)) as response:
+            with opener(urllib.request.Request(url, headers=HEADERS), timeout=timeout) as response:
                 return _read(response, limit)
         except (urllib.error.HTTPError, CutShort, http.client.IncompleteRead, ConnectionError) as error:
             if isinstance(error, urllib.error.HTTPError) and error.code == LIMITED:
@@ -77,7 +80,7 @@ def fetch(url: str, *, limit: int, opener=urllib.request.urlopen) -> bytes:
                     "arXiv is limiting requests from this computer (HTTP 429); wait a while before asking it again"
                 ) from error
             retry = not isinstance(error, urllib.error.HTTPError) or error.code in BUSY
-            if not retry or attempt == ATTEMPTS - 1:
+            if not retry or attempt == attempts - 1:
                 raise
             time.sleep(_wait_after(error, attempt))
     raise AssertionError("unreachable")

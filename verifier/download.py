@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .checks import ARXIV_ID, destination_problem, files_problem, result
+from .checks import ARXIV_ID, destination_problem, files_problem, paper_folder, result
 
 
 def verify_input(value):
@@ -13,9 +13,10 @@ def verify_input(value):
 
 
 def verify_output(input_value, output_value, workspace):
-    folder = Path(workspace) / input_value.destination
-    if Path(output_value.folder) != Path(input_value.destination) or not folder.is_dir():
-        return result(False, "output folder is missing or is not the requested destination in the workspace")
+    expected = paper_folder(input_value.destination, input_value.arxiv_id.strip())
+    folder = Path(workspace) / expected
+    if Path(output_value.folder) != expected or not folder.is_dir():
+        return result(False, f"the source is not saved in {expected.as_posix()} in the workspace")
     problem = files_problem(folder, output_value.files)
     if problem:
         return result(False, problem.pop("message"), **problem)

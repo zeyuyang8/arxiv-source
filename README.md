@@ -9,11 +9,8 @@ environment, input and output checks and lifecycle.
 
 | Tool | Does | Code |
 |---|---|---|
-| `search_papers` | Searches arXiv (`export.arxiv.org/api/query`) and returns each match's id, title, authors, abstract and date, best match first | `src/plugin/search.py` |
-| `download_source` | Downloads one paper's source archive (`/e-print/<id>`) and unpacks it safely into a new workspace folder | `src/plugin/download.py` |
-| `save_search_results` | Searches, then downloads and unpacks every result into `<destination>/<arxiv id>/`, waiting 3 s between arXiv requests | `src/plugin/save.py` |
-| `list_daily_papers` | For each person, the papers first submitted on a date (`au:"<name>" AND submittedDate:[…]`); the daily digest's pinned reference | `src/plugin/daily.py` |
-| `save_raw_paper` | Saves one paper's source under `docs/raw/{first_author_name}-{paper_short_name}-{arxiv_id}-{date}` | `src/plugin/daily.py` |
+| `search_papers` | Finds papers on arXiv and their arXiv ids: the one paper an arXiv id or URL in the query names, else the best matches for its words, each with its title, authors, abstract and date, from the first search engine to find any | `src/plugin/search.py` |
+| `download_source` | Saves one paper's source in `<destination>/<arxiv id>/`: what is there already, else its archive (`export.arxiv.org/src/<id>`) downloaded and unpacked safely | `src/plugin/download.py` |
 
 ### Tasks
 
@@ -21,40 +18,28 @@ environment, input and output checks and lifecycle.
 |---|---|---|
 | `search-papers` | Searches arXiv for papers | `tool`, with `search_papers` |
 | `save-paper-source` | Saves a paper's LaTeX source by its arXiv ID | `tool`, with `download_source` |
-| `save-search-results` | Saves the LaTeX source of a search's best matches | `tool`, with `save_search_results` |
 | `find-and-save-paper` | Finds a described paper and saves its LaTeX source | `agent`, with `search_papers` and `download_source` |
-| `write-daily-digest` | Writes a digest of people's new papers on a date | `agent`, with `search_papers` and `save_raw_paper`; reference `list_daily_papers` |
 
-Queries use arXiv's search syntax, e.g. `ti:"attention is all you need"` or
-`au:vaswani AND cat:cs.CL`. People use the plugin by chatting: the chat agent
-turns a request into one of its tasks. `search-papers`, `save-paper-source`
-and `save-search-results` each run one tool, and their output is that tool's.
-`find-and-save-paper` takes the paper as the person describes it and gives an
-agent `search_papers` and `download_source`, so it can pick the right result
-itself; it submits the paper with its saved folder (not the files, which
-`download_source`'s own check already held to the archive), and
-`verifier/find.py` checks that the paper is the one whose source fills the
-requested destination.
+The plugin does one thing: it finds a paper's arXiv id, then saves its source.
+A query is an arXiv id or URL, or plain words such as `attention is all you
+need vaswani`. It goes to OpenAlex (`api.openalex.org`) first, so arXiv is
+asked as little as it can be, which keeps under its rate limit; then to
+arXiv's own search (`export.arxiv.org/api/query`); then to DataCite
+(`api.datacite.org`), which registers every arXiv paper's DOI. Each has 1 s to
+answer: one that fails, is slower or finds nothing is passed over for the
+next, and the result names the engine that answered and why each before it
+did not. A paper's source is saved in a folder named by its id, and asking for
+it again uses that folder without asking arXiv. arXiv is asked again when it
+is busy (503) and never when it limits this computer (429), which fails at once.
 
-### Daily digest
-
-`write-daily-digest` takes a list of people and a date. Before the agent starts,
-NanoAgent runs `list_daily_papers` and pins the result, the ground truth, as
-`reference.json`. The agent then gets `search_papers` and `save_raw_paper`. It
-finds each person's papers first submitted (v1) on that UTC date, saves each
-one's source, and submits the digest with one entry per paper: the id
-(`YYMM.NNNNN`), the title and authors exactly as arXiv lists them, a two-line
-summary in its own words, `https://arxiv.org/abs/<id>`, and the folder its
-source is saved in.
-
-`verifier/daily.py` checks the submitted digest against the pinned listing,
-offline. It approves only when every listed paper is an exact entry and has
-its source in `docs/raw/{first_author_name}-{paper_short_name}-{arxiv_id}-{date}`. An entry
-for a paper not in the listing fails, and so does a paper that was published
-but not saved. The folder name uses the first author's last name and the
-title's first four words, each lowercased ASCII joined by `-`; the rule lives
-in `src/plugin/naming.py`, mirrored in `verifier/naming.py`. The summary's
-quality is not checked, only that it has two lines.
+People use the plugin by chatting: the chat agent turns a request into one of
+its tasks. `search-papers` and `save-paper-source` each run one tool, and their
+output is that tool's. `find-and-save-paper` takes the paper as the person
+describes it and gives an agent `search_papers` and `download_source`, so it
+can pick the right result itself; it submits the paper with its saved folder
+(not the files, which `download_source`'s own check already held to the
+archive), and `verifier/find.py` checks that the paper is the one whose source
+fills `<destination>/<arxiv id>`.
 
 ## Layout
 
@@ -84,9 +69,9 @@ error result.
 
 `verifier/` is deterministic: it imports only the standard library and
 `contract`, and checks what the types cannot say about inputs (arXiv ids,
-dates, people, queries, result counts, destinations) and outputs. For
+queries, result counts, destinations) and outputs. For
 outputs it checks that the papers are well formed and unique and within
-`max_results`, that every folder is the requested one inside the workspace,
+`max_results`, that every folder is `<destination>/<arxiv id>` inside the workspace,
 and that its files are exactly the declared ones. A tool task's output is
 judged as its tool's is.
 
@@ -98,4 +83,4 @@ uv run pytest
 ```
 
 NanoAgent passes the folder the plugin may write to as `NANOAGENT_WORKSPACE`;
-`destination` is a new folder inside it.
+`destination` is a folder inside it, each paper's source in `<destination>/<arxiv id>`.

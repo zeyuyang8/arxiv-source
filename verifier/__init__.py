@@ -2,14 +2,11 @@
 
 from contract import Task, Tool
 
-from . import daily, download, find, raw, save, search
+from . import download, find, search
 
 TOOLS = {
     Tool.DOWNLOAD_SOURCE: download,
     Tool.SEARCH_PAPERS: search,
-    Tool.SAVE_SEARCH_RESULTS: save,
-    Tool.LIST_DAILY_PAPERS: daily,
-    Tool.SAVE_RAW_PAPER: raw,
 }
 
 
@@ -22,9 +19,7 @@ def _tool_output(module):
 TASKS = {
     Task.SEARCH_PAPERS: _tool_output(search),
     Task.SAVE_PAPER_SOURCE: _tool_output(download),
-    Task.SAVE_SEARCH_RESULTS: _tool_output(save),
     Task.FIND_AND_SAVE_PAPER: find.verify_task,
-    Task.WRITE_DAILY_DIGEST: daily.verify_task,
 }
 
 

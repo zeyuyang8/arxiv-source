@@ -12,7 +12,7 @@ from plugin import arxiv
 
 def busy(code: int = 503, retry_after: str | None = None) -> urllib.error.HTTPError:
     headers = {"Retry-After": retry_after} if retry_after else {}
-    return urllib.error.HTTPError("https://export.arxiv.org/e-print/1", code, "busy", headers, io.BytesIO())
+    return urllib.error.HTTPError("https://export.arxiv.org/src/1", code, "busy", headers, io.BytesIO())
 
 
 class Sized(Response):
@@ -30,7 +30,7 @@ class Flaky:
         self.answers = list(answers)
         self.calls = 0
 
-    def __call__(self, request):
+    def __call__(self, request, timeout=None):
         self.calls += 1
         answer = self.answers.pop(0) if self.answers else Response(b"ok")
         if isinstance(answer, Exception):
