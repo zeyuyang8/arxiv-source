@@ -1,6 +1,6 @@
 # arXiv Search and Source Downloader
 
-NanoAgent's built-in reference plugin: the `nanoagent.plugin/v1` contract,
+NanoAgent's built-in reference plugin: the `nanoagent.plugin/v0001` contract,
 and the structure `nanoagent plugin new` gives every new plugin. The
 plugin is a standard MCP server over stdio; NanoAgent owns its launch command,
 environment, input and output checks and lifecycle.
